@@ -1,15 +1,31 @@
+from cProfile import label
+from pickletools import optimize
 import torch
 import torch.optim as optim
 import torch.nn as nn
 import torch.nn.functional as F
 from torchsummary import summary
+import torchvision
+# from torch.utils.data import Dataset
+# from torch.utils.data import DataLoader
 
 BATCH_SIZE = 128
 MOMENTUM = 0.9
 WEIGHT_DECAY = 0.0005
+LEARNING_RATE = 0.01
+IMAGENET_PATH = ''
+EPOCHS=90
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print(device)
+
+transform=torchvision.transforms.Compose([
+        torchvision.transforms.ToTensor(),
+        torchvision.transforms.Resize((227,227)), 
+        # torchvision.transforms.Normalize((0.1307,), (0.3081,))
+        ])
+
+classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
 
 class AlexNet(nn.Module):
     def __init__(self):
@@ -50,7 +66,8 @@ class AlexNet(nn.Module):
             nn.ReLU()
         )
 
-        self.fc3 = nn.Linear(4096, 1000)
+        # self.fc3 = nn.Linear(4096, 1000)
+        self.fc3 = nn.Linear(4096, 10)
 
     def forward(self, x):
         x = self.conv1(x)
@@ -94,7 +111,8 @@ class Alex_Net(nn.Module):
         self.drop2 = nn.Dropout(0.5)
         self.fc2 = nn.Linear(in_features=2048*2, out_features=2048*2)
         
-        self.fc3 = nn.Linear(in_features=2048*2, out_features=1000)
+        # self.fc3 = nn.Linear(in_features=2048*2, out_features=1000)
+        self.fc3 = nn.Linear(in_features=2048*2, out_features=10)
         
     def forward(self, input_layer):
         print('input', input_layer.size())
@@ -153,9 +171,35 @@ class Alex_Net(nn.Module):
 if __name__=='__main__':
     net = AlexNet()
     net.to(device)
-    optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=MOMENTUM, weight_decay=WEIGHT_DECAY)
-            
+    summary(net, (3, 227, 227))
+    
+    optimizer = optim.SGD(net.parameters(), lr=LEARNING_RATE, momentum=MOMENTUM, weight_decay=WEIGHT_DECAY)        
+    criterion = nn.CrossEntropyLoss()
 
-    # test = torch.randn(3,227, 227)
-    summary(net, (3, 227,227))
-    # net.summary()
+    # dataset = torchvision.datasets.ImageNet(IMAGENET_PATH)
+    # dataloader = torch.utils.data.DataLoader(dataset, batch_size=64, shuffle=True)
+    train_set = torchvision.datasets.CIFAR10(
+    root = '../data/cifar10',
+    train = True,
+    download = True,
+    transform=transform
+    )
+    train_loader = torch.utils.data.DataLoader(train_set, batch_size=BATCH_SIZE)
+
+    for e in range(EPOCHS):
+        for i, (inputs, labels) in enumerate(train_loader, 0):
+            inputs, labels = inputs.to(device), labels.to(device)
+
+            optimizer.zero_grad()
+
+            outputs = net(inputs)
+
+            loss = criterion(outputs, labels)
+
+            loss.backward()
+
+            optimizer.step()
+
+            print()
+
+            
