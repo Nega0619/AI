@@ -1,5 +1,0 @@
-a = ['aaa', 'bbb']
-
-print(a)
-
-print(list(map(lambda i:i[:2], a)))

@@ -1,7 +1,11 @@
+import csv
 import glob, json
 import os
 from pathlib import Path
 
+####################################################################################
+####################################################################################
+####################################################################################
 ''' Train Image Picker
 Description : Meta가 존재하는 데이터의 이름을 불러와, 그 이름에 해당하는 이미지를 원하는 위치로 옮겨주는 메소드
 Usage       : 전체 데이터에서 일부만 라벨링된 경우 사용. 
@@ -32,25 +36,25 @@ Considering : option = 'mv' or 'cp'
 
 ####################################################################################
 # train imge picker
-meta_path = '/home/hwi/Downloads/VQIS-POC_(BOX) 2022-10-20 9_27_13 /meta/VQIS/images'
+# meta_path = '/home/hwi/Downloads/VQIS-POC_(BOX) 2022-10-20 9_27_13 /meta/VQIS/images'
 
-# 하위 모두 가는코드 추가
-image_list = os.listdir(meta_path)
-image_list = [Path(img).stem for img in image_list]
-print(len(image_list))
-print(image_list[1])
+# # 하위 모두 가는코드 추가
+# image_list = os.listdir(meta_path)
+# image_list = [Path(img).stem for img in image_list]
+# print(len(image_list))
+# print(image_list[1])
 
-# mv to to path
-from_path = '/home/hwi/github/data/VQIS_PoC/suite'
-to_path = '/home/hwi/Downloads/filetered chick'
+# # mv to to path
+# from_path = '/home/hwi/github/data/VQIS_PoC/suite'
+# to_path = '/home/hwi/Downloads/filetered chick'
 
-exits_list = os.listdir(from_path)
+# exits_list = os.listdir(from_path)
 
-for i in image_list:
-    if i in exits_list:
-        from_ = os.path.join(from_path, i)
-        to_ = os.path.join(to_path, i)
-        os.rename(from_, to_)
+# for i in image_list:
+#     if i in exits_list:
+#         from_ = os.path.join(from_path, i)
+#         to_ = os.path.join(to_path, i)
+#         os.rename(from_, to_)
 
 '''
 import os
@@ -68,17 +72,18 @@ shutil.move("path/to/current/file.foo", "path/to/new/destination/for/file.foo")
 
 # path = '/home/hwi/github/data/VQIS-POC_(BOX) middle chick'
 
-# annotation_path='/home/hwi/github/data/middle_chick_detect'
+# annotation_path='/home/hwi/github/data/middle_chick_detect/meta'
 
 # origin_width = 1520
 # origin_height = 2048
 
-# def get_meta_files():
-#     files = glob.glob(path+'/meta/**/*.json', recursive=True)
-#     return files
+def get_meta_files(path):
+    files = glob.glob(path+'/*.json', recursive=True)
+    # files = glob.glob(path+'/**/*.json', recursive=True)
+    return files
 
-# def get_name(file):
-#     return Path(Path(file).stem).stem         # delete '.json'
+def get_name(file):
+    return Path(Path(file).stem).stem         # delete '.json'
 
 # files = get_meta_files()
 # # print(len(files))
@@ -133,3 +138,69 @@ shutil.move("path/to/current/file.foo", "path/to/new/destination/for/file.foo")
 #                 f.write(result)
         
 ####################################################################################
+
+
+####################################################################################
+####################################################################################
+####################################################################################
+''' Csv Maker
+Description : suite의 raw json파일을 이용하여 csv파일을 만들어줌.
+Usage       : suite에서 라벨링 종류에 따라 다르게 만들어서 다른 동작을 같은 함수로 이용할 수 있게 하기
+
+Param       -> 
+
+Considering : 부모 클래스 (형식을 정해주는)
+                자식 클래스 : suite 데이터 포멧 종류마다 (segmentation / classification / multi-label classificaiton등등)
+'''
+
+# get files
+train_path = '/home/hwi/Downloads/VQIS-POC label data/meta/VQIS/VQIS_FOR_VAL'
+source_path = '/home/hwi/Downloads/VQIS-POC label data'
+
+files = get_meta_files(train_path)
+# print(files)
+# print(len(files))
+
+result = []
+# get tag data
+for i, file in enumerate(files):
+    row =[]
+    # open metafile
+    with open(file, encoding='UTF8') as json_meta_file:
+        json_meta_data = json.load(json_meta_file)
+    
+    # get file name
+    name = get_name(file)
+    print()
+    print(name)
+    row.append(name)
+
+    # open label file
+    label_path = os.path.join(source_path, json_meta_data['label_path'][0])
+    with open(label_path, encoding='UTF8') as json_label_data:
+        json_label_data = json.load(json_label_data)
+    
+    test_str = ''
+    if 'categories' in json_label_data:
+        opt_num = len(json_label_data['categories']['properties'][0]['option_names'])
+        for num in range(opt_num):
+            index_num = num + 1
+            tag = json_label_data['categories']['properties'][0]['option_names'][num]
+            test_str +=tag
+            row.append(tag)
+    # print('row')
+    # print(row)
+    result.append(row)
+    # if opt_num !=1:
+    #     break
+
+# print('result')
+# print(result)
+# make csvfile
+csv_file_name = 'VQIS-VAL.csv'
+
+with open(csv_file_name, 'w') as f:
+    # for r in result:
+    wr = csv.writer(f)
+    wr.writerows(result)
+print('end')
