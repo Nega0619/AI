@@ -154,7 +154,7 @@ Considering : 부모 클래스 (형식을 정해주는)
 '''
 
 # get files
-train_path = '/home/hwi/Downloads/VQIS-POC label data/meta/VQIS/VQIS_FOR_VAL'
+train_path = '/home/hwi/Downloads/VQIS-POC label data/meta/VQIS/VQIS_POR_TEST'
 source_path = '/home/hwi/Downloads/VQIS-POC label data'
 
 files = get_meta_files(train_path)
@@ -197,7 +197,7 @@ for i, file in enumerate(files):
 # print('result')
 # print(result)
 # make csvfile
-csv_file_name = 'VQIS-VAL.csv'
+csv_file_name = 'VQIS-TEST.csv'
 
 with open(csv_file_name, 'w') as f:
     # for r in result:
